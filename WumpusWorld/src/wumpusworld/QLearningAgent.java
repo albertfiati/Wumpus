@@ -14,32 +14,58 @@ import java.util.Random;
  */
 public class QLearningAgent implements LearningAgent {
 
+    /**
+     * defining all the possible moves at a said position
+     */
     public static final String[] MOVE = {"LEFT", "RIGHT", "UP", "DOWN"};
+
+    /**
+     * defining default maximum score of every action
+     */
     public static final double MAXACTIONSCORE = -1;
+
+    /**
+     * defining training iteration
+     */
     public static final int ITERATIONS = 100000;
 
+    /*
+    *   defining rewards for pit, gold, wumpus, shoot arrow
+    **/
     public static final int PITREWARD = -1;
     public static final int WUMPUSREWARD = -1;
     public static final int GOLDREWARD = 1;
-    public static final double COSTOFACTION = -0.04;
     public static final int SHOOTREWARD = -1;
 
+    /**
+     * defining the cost of performing an action, learning rate, dicount factor,
+     * and probability of the agent making a bad move
+     */
+    public static final double COSTOFACTION = -0.04;
     public static final double LEARNINGRATE = 0.5;
     public static final double DISCOUNTFACTOR = 0.8;
+    public static final double PROBABILITYOFBADMOVE = 0.2;
 
-//    public static final double PROBABILITYOFBADMOVE = 0.2;
-
-    /*
-    *   
+    /**
+     * define and initialize a reward table for qlearning
      */
     public static double[][] qTable = new double[16][5];
 
-    //get next safe position
+    /**
+     * get next safe position
+     *
+     * @param currentPosition
+     *
+     * @return String
+     */
     public String getBestMove(Position currentPosition) {
         String move = null;
         double maxActionReward = MAXACTIONSCORE;
+
+        // get the current row index of the qTable
         int currentQRowIndex = this.getQTableRowIndex(currentPosition);
 
+        //loop through the various rewards of the the actions taken by the agent to select the best
         for (int i = 1; i < 5; i++) {
             if (qTable[currentQRowIndex][i] > maxActionReward) {
                 move = MOVE[i - 1];
@@ -50,6 +76,11 @@ public class QLearningAgent implements LearningAgent {
         return move;
     }
 
+    /**
+     * generate a random move for the agent
+     *
+     * @return String
+     */
     public String getRandomMove() {
         Random rand = new Random();
 
@@ -59,6 +90,13 @@ public class QLearningAgent implements LearningAgent {
         return move;
     }
 
+    /**
+     * get the index of qTable related to a given state
+     *
+     * @param position
+     *
+     * @return int
+     */
     private int getQTableRowIndex(Position position) {
         int index = -1;
 
@@ -85,6 +123,14 @@ public class QLearningAgent implements LearningAgent {
         return index;
     }
 
+    /**
+     * update the qTable with the reward of a particular action using the
+     * Bellman equation
+     *
+     * @param currentPosition
+     * @param move
+     *
+     */
     public void updateQTable(Position currentPosition, String move) {
         int currentQTableRowIndex = this.getQTableRowIndex(currentPosition);
         int nextQTableRowIndex = this.getQTableRowIndex(this.getNextPosition(move, currentPosition));
@@ -98,6 +144,14 @@ public class QLearningAgent implements LearningAgent {
         }
     }
 
+    /**
+     * Get the maximum reward of all actions of a state
+     *
+     * @param qRow
+     *
+     * @return double
+     *
+     */
     private double getMaxReward(double[] qRow) {
         double max = MAXACTIONSCORE;
 
@@ -110,6 +164,15 @@ public class QLearningAgent implements LearningAgent {
         return max;
     }
 
+    /**
+     * Generate the next position based on a given move and current position
+     *
+     * @param move
+     * @param currentPosition
+     *
+     * @return Position
+     *
+     */
     public Position getNextPosition(String move, Position currentPosition) {
         Position newPosition = new Position();
 
@@ -135,30 +198,33 @@ public class QLearningAgent implements LearningAgent {
         return newPosition;
     }
 
-    public void evaluate(World w, Position currentPosition) {
-        int x = w.getPlayerX();
-        int y = w.getPlayerY();
-
-        String what = "Nothing";
+    /**
+     * evaluate the position and assign its value
+     *
+     * @param world
+     * @param currentPosition
+     *
+     */
+    public void evaluate(World world, Position currentPosition) {
+        int x = world.getPlayerX();
+        int y = world.getPlayerY();
 
         int currentQRowIndex = this.getQTableRowIndex(currentPosition);
 
-        if (w.gameOver() && w.hasWumpus(x, y)) {
-            what = "Wumpus";
+        if (world.gameOver() && world.hasWumpus(x, y)) {
             qTable[currentQRowIndex][0] = WUMPUSREWARD;
-        } else if (w.hasPit(x, y)) {
-            what = "Pit";
+        } else if (world.hasPit(x, y)) {
             qTable[currentQRowIndex][0] = PITREWARD;
-            w.doAction(World.A_CLIMB);
-        } else if (w.hasGlitter(x, y)) {
-            what = "Gold";
+            world.doAction(World.A_CLIMB);
+        } else if (world.hasGlitter(x, y)) {
             qTable[currentQRowIndex][0] = GOLDREWARD;
-            w.doAction(World.A_GRAB);
+            world.doAction(World.A_GRAB);
         }
-
-        //System.out.println("What is here? Ans: " + what);
     }
 
+    /**
+     * print the values of the qTable
+     */
     public void print() {
         System.out.println(String.format("%s%15s%15s%15s%15s%15s", "ROW#", "VALUE", "LEFT", "RIGHT", "UP", "DOWN"));
 
